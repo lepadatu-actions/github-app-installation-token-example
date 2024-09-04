@@ -32,7 +32,7 @@ jobs:
        with:
          app-id: ${{ secrets.APP_ID }}
          kms-key-id: ${{ secrets.KMS_KEY_ID }}
-         repositories: ${{ github.repository }}
+         repositories: github-app-installation-token-example
        id: get-app-token
      - name: Install Terraform
        uses: hashicorp/setup-terraform@v3
