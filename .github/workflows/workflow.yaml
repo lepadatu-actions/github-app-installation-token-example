@@ -1,0 +1,50 @@
+name: Deploy Infrastructure
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+      
+jobs:
+ terraform:
+   name: "Terraform GitHub Infrastructure Deployment"
+   runs-on: ubuntu-latest
+   defaults:
+     run:
+       shell: bash
+   steps:
+     - name: Checkout the repository to the runner
+       uses: actions/checkout@v4
+   
+     - name: AWS Login
+       uses: aws-actions/configure-aws-credentials@v4
+       with:
+         aws-region: ${{ secrets.AWS_REGION }}
+         role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
+         role-session-name: test-create-github-app-token-aws
+
+     - name: Get GitHub Installation Access Token
+       uses: lepadatu-actions/create-github-app-token-aws@v1
+       with:
+         app-id: ${{ secrets.APP_ID }}
+         kms-key-id: ${{ secrets.KMS_KEY_ID }}
+         repositories: ${{ github.repository }}
+       id: get-app-token
+     - name: Install Terraform
+       uses: hashicorp/setup-terraform@v3
+       with: 
+         terraform_version: "1.8.5"
+     - name: Terraform init
+       run: terraform init
+       id: init
+       env:
+          GITHUB_TOKEN: ${{ steps.get-app-token.outputs.token }}
+     - name: Terraform plan
+       run: terraform plan -var="repository_name=${{ github.repository }}" -var="github_owner=${{ github.repository_owner }}"
+       id: plan
+       env:
+          GITHUB_TOKEN: ${{ steps.get-app-token.outputs.token }}
